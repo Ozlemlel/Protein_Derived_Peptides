@@ -10,6 +10,7 @@ import pandas as pd
 
 # This function reads the data from the input argument
 # Creates 2 global df, >=80 and <= 0 by calling filter_data_eighty and filter_data_zero
+# also takes in target df
 def read_data(reference, target):
     global ref_eighty
     global ref_zero
