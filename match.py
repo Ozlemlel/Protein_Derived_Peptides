@@ -21,12 +21,17 @@ def read_data(reference, target):
     global ref_zero
     global tar_eighty
     global tar_zero
+    global match_table_eighty
+    
     ref = pd.read_csv(reference)
     tar = pd.read_csv(target)
+    # Filtering
     ref_eighty = filter_data_eighty(ref)
     ref_zero = filter_data_zero(ref)
     tar_eighty = filter_data_eighty(tar)
     tar_zero = filter_data_zero(tar)
+    # Matching
+    match_table_eighty = match(ref_eighty, tar_eighty);
     
 def filter_data_eighty(df):
     result = pd.DataFrame([])
@@ -47,8 +52,12 @@ def filter_data_zero(df):
 def match(ref, tar):
     result = pd.DataFrame([])
     for i, row in ref.iterrows():
+        print(i)
         ref_val = ref[ref.columns.values[1]][i]
         for j, row in tar.iterrows():
             tar_val = tar[tar.columns.values[1]][j]
             score = pairwise2.align.globalmx(ref_val, tar_val, 1, -1)[0][2] / 12.0
-            
+            if score >= 0.80:
+                result = result.append(pd.DataFrame({'ref': ref_val, 
+                                             'tar': tar_val, 'score': score}, index=[0]), ignore_index=True)
+    return result;
