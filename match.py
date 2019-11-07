@@ -13,14 +13,29 @@ import pandas as pd
 
 from Bio import pairwise2
 
+import matplotlib.pyplot as plt
+
+import numpy as np
+
 from itertools import islice
 
 # DONE Only >= 80 now, implement <= 0
 # DONE 1 --> Calculate upper and lower bound
-# 2 --> Get percentage, filter percentage (if statement) 
+# DONE 2 --> Get percentage, filter percentage (if statement) 
 # 3 --> Plot
 
-def read_data(reference, target):
+# This interface is used for the filter final percentage function
+import operator
+
+def get_truth(inp, relate, cut):
+    ops = {'>': operator.gt,
+           '<': operator.lt,
+           '>=': operator.ge,
+           '<=': operator.le,
+           '=': operator.eq}
+    return ops[relate](inp, cut)
+
+def compare_data():
     global ref_eighty
     global ref_zero
     global tar_eighty
@@ -30,26 +45,37 @@ def read_data(reference, target):
     global matrix
     global min_max_eighty
     global min_max_zero
-    global final_percentage_score_eighty
-    global final_percentage_score_zero
+    global final_percentage_score_eighty_above_eighty
+    global final_percentage_score_zero_above_eighty
+    global final_percentage_score_eighty_below_twenty
+    global final_percentage_score_zero_below_twenty
     
-    matrix_unready = pd.read_csv('twelveAAHAmat.csv')
-    matrix = prep_matrix(matrix_unready)
-    
+
+    reference = input("Enter file name for the reference dataset: ")
+    target = input("Enter file name for the target dataset: ")
     ref = pd.read_csv(reference)
     tar = pd.read_csv(target)
+    
+    matrix_input = input("Enter file name for the similarity matrix: ")
+    matrix_unready = pd.read_csv(matrix_input)
+    matrix = prep_matrix(matrix_unready)
+    
     # Filtering
-    ref_eighty = filter_data_eighty(ref)
-    ref_zero = filter_data_zero(ref)
-    tar_eighty = filter_data_eighty(tar)
-    tar_zero = filter_data_zero(tar)
+    ref_eighty = filter_data(ref, '>=', 80.0)
+    ref_zero = filter_data(ref, '<=', 0.0)
+    tar_eighty = filter_data(tar, '>=', 80.0)
+    tar_zero = filter_data(tar, '<=', 0.0)
+    
     # Matching
     min_max_eighty = {}
     match_table_eighty = match(ref_eighty, tar_eighty, min_max_eighty)
     min_max_zero = {}
     match_table_zero = match(ref_zero, tar_zero, min_max_zero)
-    final_percentage_score_eighty = filter_percentage(match_table_eighty, min_max_eighty)
-    final_percentage_score_zero = filter_percentage(match_table_zero, min_max_zero)
+    final_percentage_score_eighty_above_eighty = filter_percentage(match_table_eighty, min_max_eighty, '>=', 0.8)
+    final_percentage_score_zero_above_eighty = filter_percentage(match_table_zero, min_max_zero, '>=', 0.8)
+    final_percentage_score_eighty_below_twenty = filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2)
+    final_percentage_score_zero_below_twenty = filter_percentage(match_table_zero, min_max_zero, '<=', 0.2)
+    print("DONE")
     
 def prep_matrix(matrix):
     dict = {}
@@ -59,19 +85,11 @@ def prep_matrix(matrix):
             dict[row_name, column_name] = matrix[column_name][i];
     return dict
     
-def filter_data_eighty(df):
+def filter_data(df, operator_string, target_value):
     result = pd.DataFrame([])
     for i, row in df.iterrows():
-        if df[df.columns[0]][i] >= 80.0:
+        if get_truth(df[df.columns[0]][i], operator_string, target_value):
             result= result.append(pd.DataFrame({df.columns.values[0]: df[df.columns[0]][i], 
-                                             df.columns.values[1]: df[df.columns[1]][i]}, index=[0]), ignore_index=True)
-    return result
-
-def filter_data_zero(df):
-    result = pd.DataFrame([])
-    for i, row in df.iterrows():
-        if df[df.columns[0]][i] <= 0.0:
-            result = result.append(pd.DataFrame({df.columns.values[0]: df[df.columns[0]][i], 
                                              df.columns.values[1]: df[df.columns[1]][i]}, index=[0]), ignore_index=True)
     return result
 
@@ -92,7 +110,7 @@ def match(ref, tar, table):
             table[ref_val] = (min_val, max_val)
     return result;
 
-def filter_percentage(df, bound):
+def filter_percentage(df, bound, operator_string, target_percentage):
     result = pd.DataFrame([])
     for i, row in df.iterrows():
         ref_val = df[df.columns.values[0]][i]
@@ -102,8 +120,11 @@ def filter_percentage(df, bound):
         total = max_score - min_score
         score = df[df.columns.values[2]][i]
         percentage = (score - min_score) / total
-        if percentage >= 0.8:
+        if get_truth(percentage, operator_string, target_percentage):
             result = result.append(pd.DataFrame({'ref': ref_val, 
-                                             'tar': tar_val, 'score': score, 'percentage': percentage}, index=[0]), ignore_index=True)
+                                             'tar': tar_val, 'score': score, 
+                                             'percentage': percentage, 'min_score_reference': min_score, 
+                                             'max_score_reference': max_score}, index=[0]), 
+        ignore_index=True)
     return result
 
