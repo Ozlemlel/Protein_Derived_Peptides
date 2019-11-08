@@ -26,7 +26,7 @@ from itertools import islice
 # 3 --> Plot
 
 # This interface is used for the filter final percentage function
-# final_percentage_score_zero_above_eighty['ref'].value_counts().plot('barh').invert_yaxis()
+# final_percentage_score_zero_below_twenty['ref'].value_counts().plot(kind='barh').invert_yaxis()
 
 import operator
 
