@@ -22,9 +22,12 @@ from itertools import islice
 # DONE Only >= 80 now, implement <= 0
 # DONE 1 --> Calculate upper and lower bound
 # DONE 2 --> Get percentage, filter percentage (if statement) 
+# Issue: Dict form of matrix
 # 3 --> Plot
 
 # This interface is used for the filter final percentage function
+# final_percentage_score_zero_above_eighty['ref'].value_counts().plot('barh').invert_yaxis()
+
 import operator
 
 def get_truth(inp, relate, cut):
@@ -35,7 +38,7 @@ def get_truth(inp, relate, cut):
            '=': operator.eq}
     return ops[relate](inp, cut)
 
-def compare_data():
+def compare_data(reference, target, matrix_input):
     global ref_eighty
     global ref_zero
     global tar_eighty
@@ -50,13 +53,9 @@ def compare_data():
     global final_percentage_score_eighty_below_twenty
     global final_percentage_score_zero_below_twenty
     
-
-    reference = input("Enter file name for the reference dataset: ")
-    target = input("Enter file name for the target dataset: ")
     ref = pd.read_csv(reference)
     tar = pd.read_csv(target)
     
-    matrix_input = input("Enter file name for the similarity matrix: ")
     matrix_unready = pd.read_csv(matrix_input)
     matrix = prep_matrix(matrix_unready)
     
@@ -71,6 +70,7 @@ def compare_data():
     match_table_eighty = match(ref_eighty, tar_eighty, min_max_eighty)
     min_max_zero = {}
     match_table_zero = match(ref_zero, tar_zero, min_max_zero)
+    
     final_percentage_score_eighty_above_eighty = filter_percentage(match_table_eighty, min_max_eighty, '>=', 0.8)
     final_percentage_score_zero_above_eighty = filter_percentage(match_table_zero, min_max_zero, '>=', 0.8)
     final_percentage_score_eighty_below_twenty = filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2)
@@ -79,10 +79,11 @@ def compare_data():
     
 def prep_matrix(matrix):
     dict = {}
-    for column_name, column in islice(matrix.transpose().iterrows(), 1, None):
-        for i, row in matrix.iterrows():
-            row_name = matrix[matrix.columns.values[0]][i]
-            dict[row_name, column_name] = matrix[column_name][i];
+    for i, row in matrix.iterrows():
+        row_name = matrix.iat[i,0]
+        for j, row in matrix.iterrows():
+            column_name = matrix.columns.values[j + 1]
+            dict[row_name, column_name] = matrix.iat[i, j + 1];
     return dict
     
 def filter_data(df, operator_string, target_value):
@@ -98,11 +99,11 @@ def match(ref, tar, table):
     for i, row in ref.iterrows():
         print(i + 1, " / ", len(ref), " Done")
         ref_val = ref[ref.columns.values[1]][i]
-        min_val = score = pairwise2.align.globaldx(ref_val, tar[tar.columns.values[1]][0], matrix)[0][2]
+        min_val = pairwise2.align.globalds(ref_val, tar[tar.columns.values[1]][0], matrix, -100, -100)[0][2]
         max_val = min_val
         for j, row in tar.iterrows():
             tar_val = tar[tar.columns.values[1]][j]
-            score = pairwise2.align.globaldx(ref_val, tar_val, matrix)[0][2]
+            score = pairwise2.align.globalds(ref_val, tar_val, matrix, -100, -100)[0][2]
             result = result.append(pd.DataFrame({'ref': ref_val, 
                                              'tar': tar_val, 'score': score}, index=[0]), ignore_index=True)
             min_val = min(min_val, score)
