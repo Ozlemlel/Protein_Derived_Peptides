@@ -75,6 +75,12 @@ def compare_data(reference, target, matrix_input):
     final_percentage_score_zero_above_eighty = filter_percentage(match_table_zero, min_max_zero, '>=', 0.8)
     final_percentage_score_eighty_below_twenty = filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2)
     final_percentage_score_zero_below_twenty = filter_percentage(match_table_zero, min_max_zero, '<=', 0.2)
+    
+    #Change the second and third argument for size 
+    plot_chart(final_percentage_score_eighty_above_eighty, 50, 10, 'above_eighty_above_eighty_precent.png')
+    plot_chart(final_percentage_score_zero_above_eighty, 50, 10, 'below_zero_above_eighty_precent.png')
+    plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, 'above_eighty_below_twenty_precent.png')
+    plot_chart(final_percentage_score_zero_below_twenty, 50, 10, 'below_zero_below_twenty_precent.png')
     print("DONE")
     
 def prep_matrix(matrix):
@@ -128,4 +134,20 @@ def filter_percentage(df, bound, operator_string, target_percentage):
                                              'max_score_reference': max_score}, index=[0]), 
         ignore_index=True)
     return result
+
+# Change this if you with to outputing a larger image
+def plot_chart(df, num_1, num_2, name):
+    fig = plt.figure(figsize=(num_1, num_2))
+    plt.bar(df['ref'].value_counts().index, 
+             df['ref'].value_counts())
+    plt.xticks(rotation=70)
+    plt.savefig(name ,bbox_inches='tight')
+    plt.clf()
+    
+    
+    
+    #plt.bar(final_percentage_score_zero_above_eighty['ref'].value_counts().index, 
+    #        final_percentage_score_zero_above_eighty['ref'].value_counts())
+    #plt.xticks(rotation=70)
+    #plt.savefig('test_2.png',bbox_inches='tight')
 
