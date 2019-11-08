@@ -6,28 +6,13 @@ Created on Tue Oct 29 22:05:05 2019
 @author: Steve
 """
 
-# Points?
-# Percentage?
-
 import pandas as pd
 
 from Bio import pairwise2
 
 import matplotlib.pyplot as plt
 
-import numpy as np
-
-from itertools import islice
-
-# DONE Only >= 80 now, implement <= 0
-# DONE 1 --> Calculate upper and lower bound
-# DONE 2 --> Get percentage, filter percentage (if statement) 
-# Issue: Dict form of matrix
-# 3 --> Plot
-
-# This interface is used for the filter final percentage function
-# final_percentage_score_zero_below_twenty['ref'].value_counts().plot(kind='barh').invert_yaxis()
-
+# This interface is used for the filter final percentage function when passing in comparison operators
 import operator
 
 def get_truth(inp, relate, cut):
@@ -38,6 +23,12 @@ def get_truth(inp, relate, cut):
            '=': operator.eq}
     return ops[relate](inp, cut)
 
+# main function of the program. Takes 2 datasets as input and another similarity matrix as string input.
+# Sequences need to be the same, otherwise program fails
+# Similarity matrix is prefered to be symmetric
+# This is the only function necessary to call to get the output
+# The images will be saved in the current directory where the program is located as png
+# cheng the second and third argument of plot_chart to change the size of the output image
 def compare_data(reference, target, matrix_input):
     global ref_eighty
     global ref_zero
@@ -59,30 +50,35 @@ def compare_data(reference, target, matrix_input):
     matrix_unready = pd.read_csv(matrix_input)
     matrix = prep_matrix(matrix_unready)
     
-    # Filtering
+    # Filter dataset based on TSS scores (>=80.0 and <=0.0)
     ref_eighty = filter_data(ref, '>=', 80.0)
     ref_zero = filter_data(ref, '<=', 0.0)
     tar_eighty = filter_data(tar, '>=', 80.0)
     tar_zero = filter_data(tar, '<=', 0.0)
     
-    # Matching
+    # Matching the scores using the needleman wunsch algorithm with no alignments, minimum and maximum score
+    # for each reference sequence is also gathered in this process.
     min_max_eighty = {}
     match_table_eighty = match(ref_eighty, tar_eighty, min_max_eighty)
     min_max_zero = {}
     match_table_zero = match(ref_zero, tar_zero, min_max_zero)
     
+    # Calculate the percentage based on the match score and the min / max value of that reference sequence
+    # Filters percentage matching >= 80% and <= 20%
     final_percentage_score_eighty_above_eighty = filter_percentage(match_table_eighty, min_max_eighty, '>=', 0.8)
     final_percentage_score_zero_above_eighty = filter_percentage(match_table_zero, min_max_zero, '>=', 0.8)
     final_percentage_score_eighty_below_twenty = filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2)
     final_percentage_score_zero_below_twenty = filter_percentage(match_table_zero, min_max_zero, '<=', 0.2)
     
-    #Change the second and third argument for size 
+    # Change the second and third argument for size 
     plot_chart(final_percentage_score_eighty_above_eighty, 50, 10, 'above_eighty_above_eighty_precent.png')
     plot_chart(final_percentage_score_zero_above_eighty, 50, 10, 'below_zero_above_eighty_precent.png')
     plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, 'above_eighty_below_twenty_precent.png')
     plot_chart(final_percentage_score_zero_below_twenty, 50, 10, 'below_zero_below_twenty_precent.png')
     print("DONE")
     
+# This function prepares the similarity matrix to the form that can be passed into the pairwise2 function
+# csv(matrix) -> dict    
 def prep_matrix(matrix):
     dict = {}
     for i, row in matrix.iterrows():
@@ -92,6 +88,7 @@ def prep_matrix(matrix):
             dict[row_name, column_name] = matrix.iat[i, j + 1];
     return dict
     
+# filters data based on operator and target values
 def filter_data(df, operator_string, target_value):
     result = pd.DataFrame([])
     for i, row in df.iterrows():
@@ -100,6 +97,7 @@ def filter_data(df, operator_string, target_value):
                                              df.columns.values[1]: df[df.columns[1]][i]}, index=[0]), ignore_index=True)
     return result
 
+# Needleman Wunsch Algorithm
 def match(ref, tar, table):
     result = pd.DataFrame([])
     for i, row in ref.iterrows():
@@ -117,6 +115,7 @@ def match(ref, tar, table):
             table[ref_val] = (min_val, max_val)
     return result;
 
+# Filter percentage based on operator and given percentage
 def filter_percentage(df, bound, operator_string, target_percentage):
     result = pd.DataFrame([])
     for i, row in df.iterrows():
@@ -135,7 +134,7 @@ def filter_percentage(df, bound, operator_string, target_percentage):
         ignore_index=True)
     return result
 
-# Change this if you with to outputing a larger image
+## Output plot
 def plot_chart(df, num_1, num_2, name):
     fig = plt.figure(figsize=(num_1, num_2))
     plt.bar(df['ref'].value_counts().index, 
@@ -144,10 +143,3 @@ def plot_chart(df, num_1, num_2, name):
     plt.savefig(name ,bbox_inches='tight')
     plt.clf()
     
-    
-    
-    #plt.bar(final_percentage_score_zero_above_eighty['ref'].value_counts().index, 
-    #        final_percentage_score_zero_above_eighty['ref'].value_counts())
-    #plt.xticks(rotation=70)
-    #plt.savefig('test_2.png',bbox_inches='tight')
-
