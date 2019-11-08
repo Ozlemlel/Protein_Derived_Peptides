@@ -15,6 +15,18 @@ import matplotlib.pyplot as plt
 # This interface is used for the filter final percentage function when passing in comparison operators
 import operator
 
+import os
+
+global final_percentage_score_eighty_above_eighty
+global final_percentage_score_zero_above_eighty
+global final_percentage_score_eighty_below_twenty
+global final_percentage_score_zero_below_twenty
+    
+final_percentage_score_eighty_above_eighty = pd.DataFrame()
+final_percentage_score_zero_above_eighty = pd.DataFrame()
+final_percentage_score_eighty_below_twenty = pd.DataFrame()
+final_percentage_score_zero_below_twenty = pd.DataFrame()
+
 def get_truth(inp, relate, cut):
     ops = {'>': operator.gt,
            '<': operator.lt,
@@ -22,6 +34,18 @@ def get_truth(inp, relate, cut):
            '<=': operator.le,
            '=': operator.eq}
     return ops[relate](inp, cut)
+
+def compare_data_cross_species(ref_file_name, target_file_name, matrix):    
+    for filename in os.listdir(target_file_name):
+        print('processing: ' + filename)
+        compare_data(ref_file_name, './' + target_file_name + '/' + filename, matrix)
+    # Change the second and third argument for size 
+    plot_chart(final_percentage_score_eighty_above_eighty, 50, 10, 'above_eighty_above_eighty_precent.png')
+    plot_chart(final_percentage_score_zero_above_eighty, 50, 10, 'below_zero_above_eighty_precent.png')
+    plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, 'above_eighty_below_twenty_precent.png')
+    plot_chart(final_percentage_score_zero_below_twenty, 50, 10, 'below_zero_below_twenty_precent.png')
+    print("DONE")
+        
 
 # main function of the program. Takes 2 datasets as input and another similarity matrix as string input.
 # Sequences need to be the same, otherwise program fails
@@ -44,6 +68,7 @@ def compare_data(reference, target, matrix_input):
     global final_percentage_score_eighty_below_twenty
     global final_percentage_score_zero_below_twenty
     
+    
     ref = pd.read_csv(reference)
     tar = pd.read_csv(target)
     
@@ -65,17 +90,11 @@ def compare_data(reference, target, matrix_input):
     
     # Calculate the percentage based on the match score and the min / max value of that reference sequence
     # Filters percentage matching >= 80% and <= 20%
-    final_percentage_score_eighty_above_eighty = filter_percentage(match_table_eighty, min_max_eighty, '>=', 0.8)
-    final_percentage_score_zero_above_eighty = filter_percentage(match_table_zero, min_max_zero, '>=', 0.8)
-    final_percentage_score_eighty_below_twenty = filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2)
-    final_percentage_score_zero_below_twenty = filter_percentage(match_table_zero, min_max_zero, '<=', 0.2)
-    
-    # Change the second and third argument for size 
-    plot_chart(final_percentage_score_eighty_above_eighty, 50, 10, 'above_eighty_above_eighty_precent.png')
-    plot_chart(final_percentage_score_zero_above_eighty, 50, 10, 'below_zero_above_eighty_precent.png')
-    plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, 'above_eighty_below_twenty_precent.png')
-    plot_chart(final_percentage_score_zero_below_twenty, 50, 10, 'below_zero_below_twenty_precent.png')
-    print("DONE")
+    final_percentage_score_eighty_above_eighty = final_percentage_score_eighty_above_eighty.append(filter_percentage(match_table_eighty, min_max_eighty, '>=', 0.9))
+    final_percentage_score_zero_above_eighty = final_percentage_score_zero_above_eighty.append(filter_percentage(match_table_zero, min_max_zero, '>=', 0.9))
+    final_percentage_score_eighty_below_twenty = final_percentage_score_eighty_below_twenty.append(filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2))
+    final_percentage_score_zero_below_twenty = final_percentage_score_zero_below_twenty.append(filter_percentage(match_table_zero, min_max_zero, '<=', 0.2))
+
     
 # This function prepares the similarity matrix to the form that can be passed into the pairwise2 function
 # csv(matrix) -> dict    
