@@ -27,3 +27,10 @@ compare_data_cross_species("Homo sapiens (Human)_Ameloblastin12_length.csv", "ta
 ```
 
 After processing, the function will generate the images in the running directory.
+```
+DONE
+<Figure size 3600x720 with 0 Axes>
+<Figure size 3600x720 with 0 Axes>
+<Figure size 3600x720 with 0 Axes>
+<Figure size 3600x720 with 0 Axes>
+```
