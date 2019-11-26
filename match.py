@@ -40,10 +40,10 @@ def compare_data_cross_species(ref_file_name, target_file_name, matrix):
         print('processing: ' + filename)
         compare_data(ref_file_name, './' + target_file_name + '/' + filename, matrix)
     # Change the second and third argument for size 
-    plot_chart(final_percentage_score_eighty_above_eighty, 50, 10, 'above_eighty_above_eighty_precent.png')
-    plot_chart(final_percentage_score_zero_above_eighty, 50, 10, 'below_zero_above_eighty_precent.png')
-    plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, 'above_eighty_below_twenty_precent.png')
-    plot_chart(final_percentage_score_zero_below_twenty, 50, 10, 'below_zero_below_twenty_precent.png')
+    plot_chart(final_percentage_score_eighty_above_eighty, 50, 10, target_file_name + '_above_ninty_above_eighty_precent.png')
+    plot_chart(final_percentage_score_zero_above_eighty, 50, 10, target_file_name + '_below_zero_above_eighty_precent.png')
+    plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, target_file_name + '_above_ninty_below_twenty_precent.png')
+    plot_chart(final_percentage_score_zero_below_twenty, 50, 10, target_file_name + '_below_zero_below_twenty_precent.png')
     print("DONE")
         
 
@@ -122,16 +122,17 @@ def match(ref, tar, table):
     for i, row in ref.iterrows():
         print(i + 1, " / ", len(ref), " Done")
         ref_val = ref[ref.columns.values[1]][i]
-        min_val = pairwise2.align.globalds(ref_val, tar[tar.columns.values[1]][0], matrix, -100, -100)[0][2]
-        max_val = min_val
-        for j, row in tar.iterrows():
-            tar_val = tar[tar.columns.values[1]][j]
-            score = pairwise2.align.globalds(ref_val, tar_val, matrix, -100, -100)[0][2]
-            result = result.append(pd.DataFrame({'ref': ref_val, 
-                                             'tar': tar_val, 'score': score}, index=[0]), ignore_index=True)
-            min_val = min(min_val, score)
-            max_val = max(max_val, score)
-            table[ref_val] = (min_val, max_val)
+        if not tar.empty:
+            min_val = pairwise2.align.globalds(ref_val, tar[tar.columns.values[1]][0], matrix, -100, -100)[0][2]
+            max_val = min_val
+            for j, row in tar.iterrows():
+                tar_val = tar[tar.columns.values[1]][j]
+                score = pairwise2.align.globalds(ref_val, tar_val, matrix, -100, -100)[0][2]
+                result = result.append(pd.DataFrame({'ref': ref_val, 
+                                                 'tar': tar_val, 'score': score}, index=[0]), ignore_index=True)
+                min_val = min(min_val, score)
+                max_val = max(max_val, score)
+                table[ref_val] = (min_val, max_val)
     return result;
 
 # Filter percentage based on operator and given percentage
