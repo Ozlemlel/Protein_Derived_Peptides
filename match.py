@@ -22,15 +22,15 @@ import operator
 
 import os
 
-global final_percentage_score_eighty_above_ninty
-global final_percentage_score_zero_above_eighty
+global final_percentage_score_eighty_above_eighty
+global final_percentage_score_twenty_above_eighty
 global final_percentage_score_eighty_below_twenty
-global final_percentage_score_zero_below_twenty
+global final_percentage_score_twenty_below_twenty
     
-final_percentage_score_eighty_above_ninty = pd.DataFrame()
-final_percentage_score_zero_above_eighty = pd.DataFrame()
+final_percentage_score_eighty_above_eighty = pd.DataFrame()
+final_percentage_score_twenty_above_eighty = pd.DataFrame()
 final_percentage_score_eighty_below_twenty = pd.DataFrame()
-final_percentage_score_zero_below_twenty = pd.DataFrame()
+final_percentage_score_twenty_below_twenty = pd.DataFrame()
 
 def get_truth(inp, relate, cut):
     ops = {'>': operator.gt,
@@ -42,13 +42,22 @@ def get_truth(inp, relate, cut):
 
 def compare_data_cross_species(ref_file_name, target_file_name, matrix):    
     for filename in os.listdir(target_file_name):
-        print('processing: ' + filename)
-        compare_data(ref_file_name, './' + target_file_name + '/' + filename, matrix)
+        if (not filename.startswith('.')):
+            print('processing: ' + filename)
+            compare_data(ref_file_name, './' + target_file_name + '/' + filename, matrix)
     # Change the second and third argument for size 
-    plot_chart(final_percentage_score_eighty_above_ninty, 50, 10, 'total_above_ninty.png')
-    # plot_chart(final_percentage_score_zero_above_eighty, 50, 10, 'below_zero_above_eighty_precent.png')
-    plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, 'total_below_twenty.png')
-    # plot_chart(final_percentage_score_zero_below_twenty, 50, 10, 'below_zero_below_twenty_precent.png')
+    if (not final_percentage_score_eighty_above_eighty.empty):
+        plot_chart(final_percentage_score_eighty_above_eighty, 50, 10, 'total_TSS80_Above80.png')
+        
+    if (not final_percentage_score_eighty_below_twenty.empty):
+        plot_chart(final_percentage_score_eighty_below_twenty, 50, 10, 'total_TSS80_Below20.png')
+        
+    if (not final_percentage_score_twenty_above_eighty.empty):
+        plot_chart(final_percentage_score_twenty_above_eighty, 50, 10, 'total_TSS20_Above80.png')
+    
+    if (not final_percentage_score_twenty_below_twenty.empty):
+        plot_chart(final_percentage_score_twenty_below_twenty, 50, 10, 'total_TSS20_Below20.png')
+    
     print("DONE")
         
 
@@ -68,11 +77,13 @@ def compare_data(reference, target, matrix_input):
     global matrix
     global min_max_eighty
     global min_max_zero
-    global final_percentage_score_eighty_above_ninty
-    global final_percentage_score_zero_above_eighty
+    global final_percentage_score_eighty_above_eighty
+    global final_percentage_score_twenty_above_eighty
     global final_percentage_score_eighty_below_twenty
-    global final_percentage_score_zero_below_twenty
+    global final_percentage_score_twenty_below_twenty
     
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({'font.size': 25})
     
     ref = pd.read_csv(reference)
     tar = pd.read_csv(target)
@@ -83,6 +94,7 @@ def compare_data(reference, target, matrix_input):
     # Finds the upper and lower bound for the 80% and 20% TSS of the range
     hold_ref = findBounds(ref)
     hold_tar = findBounds(tar)
+    
     ref_upper = hold_ref[0]
     ref_lower = hold_ref[1]
     tar_upper = hold_tar[0]
@@ -94,26 +106,38 @@ def compare_data(reference, target, matrix_input):
     tar_eighty = filter_data(tar, '>=', tar_upper)
     tar_twenty = filter_data(tar, '<=', tar_lower)
     
-    
-    
     # Matching the scores using the needleman wunsch algorithm with no alignments, minimum and maximum score
     # for each reference sequence is also gathered in this process.
-    min_max_eighty = {}
-    match_table_eighty = match(ref_eighty, tar_eighty, min_max_eighty)
-    min_max_zero = {}
-    match_table_zero = match(ref_twenty, tar_twenty, min_max_zero)
+    if ((not ref_eighty.empty) & (not tar_eighty.empty)):
+        min_max_eighty = {}
+        match_table_eighty = match(ref_eighty, tar_eighty, min_max_eighty)
+    if ((not ref_twenty.empty) & (not tar_twenty.empty)):
+        min_max_twenty = {}
+        match_table_twenty = match(ref_twenty, tar_twenty, min_max_twenty)
     
     # Calculate the percentage based on the match score and the min / max value of that reference sequence
     # Filters percentage matching >= 80% and <= 20%
-    hold1 = filter_percentage(match_table_eighty, min_max_eighty, '>=', 0.8)
-    hold2 = filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2)
+    if ((not ref_eighty.empty) & (not tar_eighty.empty)):
+        hold1 = filter_percentage(match_table_eighty, min_max_eighty, '>=', 0.8)
+        final_percentage_score_eighty_above_eighty = final_percentage_score_eighty_above_eighty.append(hold1)
+        plot_chart(hold1, 50, 10, target + 'TSS80_Above80.png')
+        
+        hold3 = filter_percentage(match_table_eighty, min_max_eighty, '<=', 0.2)
+        if (not hold3.empty):
+            final_percentage_score_eighty_below_twenty = final_percentage_score_eighty_below_twenty.append(hold3)
+            plot_chart(hold3, 50, 10, target + 'TSS80_Below20.png')
+    if ((not ref_twenty.empty) & (not tar_twenty.empty)):
+        hold2 = filter_percentage(match_table_twenty, min_max_twenty, '<=', 0.2)
+        if (not hold2.empty):
+            final_percentage_score_twenty_below_twenty = final_percentage_score_twenty_below_twenty.append(hold2)
+            plot_chart(hold2, 50, 10, target + 'TSS20_Below20.png')
+        
+        hold4 = filter_percentage(match_table_twenty, min_max_twenty, '>=', 0.8)
+        final_percentage_score_twenty_above_eighty = final_percentage_score_twenty_above_eighty.append(hold4)
+        plot_chart(hold4, 50, 10, target + 'TSS20_Above80.png')
     
-    final_percentage_score_eighty_above_ninty = final_percentage_score_eighty_above_ninty.append(hold1)
     # final_percentage_score_zero_above_eighty = final_percentage_score_zero_above_eighty.append(filter_percentage(match_table_zero, min_max_zero, '>=', 0.9))
-    final_percentage_score_eighty_below_twenty = final_percentage_score_eighty_below_twenty.append(hold2)
     # final_percentage_score_zero_below_twenty = final_percentage_score_zero_below_twenty.append(filter_percentage(match_table_zero, min_max_zero, '<=', 0.2))
-    plot_chart(hold1, 50, 10, target + '_above_90.png')
-    plot_chart(hold2, 50, 10, target + '_below_20.png')
     
 # This function prepares the similarity matrix to the form that can be passed into the pairwise2 function
 # csv(matrix) -> dict    
@@ -164,7 +188,10 @@ def filter_percentage(df, bound, operator_string, target_percentage):
         max_score = bound[ref_val][1]
         total = max_score - min_score
         score = df[df.columns.values[2]][i]
-        percentage = (score - min_score) / total
+        if (total == 0):
+            percentage = 1
+        else:
+            percentage = (score - min_score) / total
         if get_truth(percentage, operator_string, target_percentage):
             result = result.append(pd.DataFrame({'ref': ref_val, 
                                              'tar': tar_val, 'score': score, 
@@ -178,8 +205,8 @@ def filter_percentage(df, bound, operator_string, target_percentage):
 def findBounds(df):
     min_TSS = min(df[df.columns.values[0]])
     max_TSS = max(df[df.columns.values[0]])
-    lower_bound = min_TSS + 0.2 * (abs(min_TSS) + abs(max_TSS))
-    upper_bound = min_TSS + 0.8 * (abs(min_TSS) + abs(max_TSS))
+    lower_bound = min_TSS + 0.2 * (max_TSS - min_TSS)
+    upper_bound = min_TSS + 0.8 * (max_TSS - min_TSS)
     return [upper_bound, lower_bound]
 
 ## Output plot
@@ -192,5 +219,10 @@ def plot_chart(df, num_1, num_2, name):
     plt.clf()
 
 if __name__ == '__main__':
-    compare_data_cross_species("Homo sapiens (Human)_Ameloblastin12_length.csv", "temp_f", "twelveAAHAmat.csv")
+    # compare_data_cross_species("Homo sapiens (Human)_Ameloblastin12_length.csv", "AMELBlastin", "twelveAAHAmat.csv")
+    # compare_data_cross_species("Homo sapiens (Human)_Amelogenin12_length.csv", "Amelogenin", "twelveAAHAmat.csv")
+    # compare_data_cross_species("Homo sapiens (Human)_Matrix Gla protein (MGP) (Cell growth-inhibiting gene 36 protein)12_length.csv", "Matrix Gla Protein", "twelveAAHAmat.csv")
+    # compare_data_cross_species("Homo sapiens (Human)_Enamelin12_length.csv", "Enamelin", "twelveAAHAmat.csv")
+    # compare_data_cross_species("Homo sapiens (Human)_Fetuin-A12_length.csv", "Fetuin-A", "twelveAAHAmat.csv")
+    compare_data_cross_species("Homo sapiens (Human)_Osteocalcin (Bone Gla protein) (BGP) (Gamma-carboxyglutamic acid-containing protein)12_length.csv", "Osteocalcin", "twelveAAHAmat.csv")
     
