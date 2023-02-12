@@ -42,7 +42,7 @@ def get_truth(inp, relate, cut):
 
 def compare_data_cross_species(ref_file_name, target_file_name, matrix):    
     for filename in os.listdir(target_file_name):
-        if (not filename.startswith('.')):
+        if (not filename.startswith('.')) and filename.endswith(".csv"):
             print('processing: ' + filename)
             compare_data(ref_file_name, './' + target_file_name + '/' + filename, matrix)
     # Change the second and third argument for size 
